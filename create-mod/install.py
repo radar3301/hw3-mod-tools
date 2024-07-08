@@ -3,6 +3,7 @@ import shutil
 import zipfile
 import subprocess
 import sys
+from config import Config
 
 try:
     import requests
