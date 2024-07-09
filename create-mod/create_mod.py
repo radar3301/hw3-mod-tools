@@ -1,9 +1,11 @@
+import argparse
 import os
 import shutil
 import subprocess
 import sys
 import zipfile
 from config import Config
+from datetime import datetime
 from glob import glob
 
 def check_directory(path, create = False, cleanup = False):
@@ -25,18 +27,31 @@ def copy_directory(src, dst):
 def copy_file(src, dst):
     shutil.copy2(src, dst)
 
-def main():
-    if len(sys.argv) < 2 or len(sys.argv) > 4:
-        print("Usage: create_mod.py <path_to_zip_archive> [--compress] [--no-install]")
-        sys.exit(1)
-
-    zip_path = sys.argv[1]
-    if not os.path.exists(zip_path):
-        print(f"Zip archive does not exist: {zip_path}")
-        sys.exit(1)
+def cleanup():
+    shutil.rmtree(os.path.join(current_dir, '_temp'), ignore_errors=True)
     
-    compress = "--compress" in sys.argv
-    install = "--no-install" not in sys.argv
+def main():
+    # Create the parser
+    parser = argparse.ArgumentParser(description='Create Homeworld 3 mod from generated UGC zip.')
+
+    # Add arguments
+    parser.add_argument('zip_path', type=str, help='Path to the zip archive (does not have to be in "./ugc_output")')
+    parser.add_argument('-c', '--compress', action='store_true',  default=False, dest='compress', help='Compresses the created "~~YourMod.pak"')
+    parser.add_argument('--no-install',     action='store_false', default=True,  dest='install',  help='Do not install files to the game folder')
+    parser.add_argument('--remove',         action='store_true',  default=False, dest='remove',   help='Deletes the zip archive after processing, instead of renaming it')
+
+    # Parse the arguments
+    args = parser.parse_args()
+    
+    # Access the arguments
+    zip_path = args.zip_path
+    compress = args.compress
+    install = args.install
+    remove = args.remove
+
+    if not os.path.exists(args.zip_path):
+        print(f"Zip archive does not exist: {args.zip_path}")
+        sys.exit(1)
     
     config_path = os.path.join(current_dir, 'config.ini')
     config = Config(config_path)
@@ -86,6 +101,14 @@ def main():
         tool.push('-compress')
     subprocess.run(tool, check=True)
 
+    if not remove:
+        base_name, ext = os.path.splitext(zip_path)
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        move_zip_to = f"{base_name}.{timestamp}{ext}"
+        os.rename(zip_path, move_zip_to)
+    else:
+        os.remove(zip_path)
+
     if not install:
         return
     
@@ -100,9 +123,6 @@ def main():
     game_mods_dir = os.path.join(hw3game_loc, 'Homeworld3', 'Mods')
     check_directory(game_mods_dir, True)
     copy_directory(unzip_dir, os.path.join(game_mods_dir, mod_name))
-
-def cleanup():
-    shutil.rmtree(os.path.join(current_dir, '_temp'), ignore_errors=True)
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 
