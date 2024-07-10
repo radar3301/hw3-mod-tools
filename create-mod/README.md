@@ -28,8 +28,8 @@ This guide explains how to create the necessary mod files from the generated UGC
 
 ### Example Command with Optional Arguments
 
-To create the mod, compress the output file, prevent installation, and keep the zip archive, you would run:
+To create the mod, compress the output file, prevent installation, and delete the zip archive, you would run:
 
 ```sh
-python create_mod.py .\ugc_output\YourMod.zip --compress --no-install --keep
+python create_mod.py .\ugc_output\YourMod.zip --compress --no-install --remove
 ```
